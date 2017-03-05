@@ -58,10 +58,13 @@ login(authObj, (err, api) => {
     		if (message.attachments.length > 0) {
     			isAttachment = true
     		}
-    		api.getUserInfo(userId, (err, usr) => {
-    			if (err) {console.error(err);}
-    			sendMessageNotification(usr[userId].name, body, isAttachment);
-    		});
+    		// TODO: fix this for blocked threads
+    		if (!message.isGroup) {
+	    		api.getUserInfo(userId, (err, usr) => {
+	    			if (err) {console.error(err);}
+	    			sendMessageNotification(usr[userId].name, body, isAttachment);
+	    		});
+	    	}
     	} else if (message.type === 'read_receipt') {
     		var userId = message.reader;
     		api.getUserInfo(userId, (err, usr) => {
