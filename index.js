@@ -59,7 +59,7 @@ login(authObj, (err, api) => {
     			isAttachment = true
     		}
     		// TODO: fix this for blocked threads
-    		if (!message.isGroup) {
+    		if (message.threadID !== '1099033266852452') {
 	    		api.getUserInfo(userId, (err, usr) => {
 	    			if (err) {console.error(err);}
 	    			sendMessageNotification(usr[userId].name, body, isAttachment);
