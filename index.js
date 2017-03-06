@@ -21,6 +21,8 @@ if (fs.existsSync('appstate.json')) {
 
 // Create simple echo bot
 login(authObj, (err, api) => {
+
+	// deal with autnetication and error codes
     if(err) {
         switch (err.error) {
             case 'login-approval':
@@ -32,49 +34,66 @@ login(authObj, (err, api) => {
                 });
                 break;
             default:
-                console.error(err);
+            	pushError(err);
         }
         return;
     }
 
+    //save appstate to avoid authenticating again
     if (!authObj.appState) {
-	    //save appstate
 	    fs.writeFileSync('appstate.json', JSON.stringify(api.getAppState()));
 	}
+
+	// deal with setup
 	var myID = api.getCurrentUserID();
-	console.log('my id', myID);
 	api.setOptions({
 		listenEvents: true,
 		logLevel: 'http'
 	});
 
+	// find muted threads
+	api.getThreadList(0, 100, (err, arr) => {
+		if (err) {pushError(err);}
+		arr.forEach(function(item){
+			if (item.threadID === '1099033266852452') {
+				console.log(item);
+			}
+		});
+	});
+
+	// listen for events and messages
     api.listen((err, message) => {
-    	if (err) {console.error(err);}
+    	if (err) {pushError(err);}
     	console.log('Message receieved: ', message);
     	if (message.type === 'message') {
     		var userId = message.senderID;
     		var body = message.body;
     		var isAttachment = false;
+    		var isGroup = message.isGroup;
     		if (message.attachments.length > 0) {
     			isAttachment = true
     		}
     		// TODO: fix this for blocked threads
     		if (message.threadID !== '1099033266852452') {
 	    		api.getUserInfo(userId, (err, usr) => {
-	    			if (err) {console.error(err);}
-	    			sendMessageNotification(usr[userId].name, body, isAttachment);
+	    			if (err) {pushError(err);}
+	    			sendMessageNotification(usr[userId].name, body, isAttachment, isGroup);
 	    		});
 	    	}
     	} else if (message.type === 'read_receipt') {
     		var userId = message.reader;
     		api.getUserInfo(userId, (err, usr) => {
-    			if (err) {console.error(err);}
+    			if (err) {pushError(err);}
     			sendReadReceiptNotification(usr[userId].name);
     		});
     	}
     });
 });
 
+function pushError(error) {
+	console.error(error);
+	pushOver('There was an error! ... ' + error);
+}
 function pushOver(msg){
 	var params = {
 		token: process.env.PUSHOVER_API,
@@ -93,8 +112,13 @@ function pushOver(msg){
 }
 
 
-function sendMessageNotification(userName, body, isAttachment) {
-	var output = userName + ' sent you ';
+function sendMessageNotification(userName, body, isAttachment, isGroup) {
+	var output = userName + ' sent ';
+	if (isGroup) {
+		output += 'your group ';
+	} else {
+		output += 'you ';
+	}
 	if (body) {
 		output += 'a message: ' + body + ' ';
 	}
