@@ -3,6 +3,8 @@ const fs = require("fs");
 const readline = require("readline");
 const login = require("facebook-chat-api");
 const request = require('request');
+const Raven = require('raven');
+Raven.config('https://d7f1874667204593930e96dd35b9a61f:32b10b1a23924bc3a91a170e1f8d5fe3@sentry.io/154434').install();
 
 const rl = readline.createInterface({
   input: process.stdin,
